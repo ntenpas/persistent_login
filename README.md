@@ -1,5 +1,6 @@
-# persistent_login
-Basic persistent login web application using sessions
+# Persistent Login
+Basic persistent login web application using sessions & cookies.
 
-Starting
---------
+Installing
+----------
+`npm init`
