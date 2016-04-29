@@ -3,4 +3,4 @@ Basic persistent login web application using sessions & cookies.
 
 Installing
 ----------
-`npm init`
+`$ npm init`
