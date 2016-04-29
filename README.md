@@ -4,4 +4,4 @@ Back-end *most likely will* use mongodb, mongoose, node, express, multer.
 
 Installing
 ----------
-`$ npm init`
+`$ npm install`

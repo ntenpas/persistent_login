@@ -1,0 +1,26 @@
+{
+  "name": "persistent_login",
+  "version": "1.0.0",
+  "description": "Basic persistent login web application using sessions & cookies.",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.13.4",
+    "mongoose": "^4.4.14",
+    "multer": "^1.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ntenpasdeveloper/persistent_login.git"
+  },
+  "author": "Nolan Tenpas",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ntenpasdeveloper/persistent_login/issues"
+  },
+  "homepage": "https://github.com/ntenpasdeveloper/persistent_login#readme"
+}
