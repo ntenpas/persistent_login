@@ -43,12 +43,19 @@ body {
   display: block;
   width: 70%;
   margin: auto;
-  height: 2rem;
+  height: 2.5rem;
   background-color: #0066ff;
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: #fff;
 }
 
 #welcome button:hover {
   background-color: #1a75ff;
+}
+
+#welcome a {
+  display: block;
+  margin-top: 0.5rem;
+  text-align: center;
+  text-decoration: none;
 }
