@@ -1,4 +1,5 @@
 var loginForm = document.getElementById('loginForm');
+var signupForm = document.getElementById('signupForm');
 
 function sendData(form, login) {
   var xhr = new XMLHttpRequest();
@@ -23,21 +24,32 @@ function sendData(form, login) {
 function validateInputs() {
   var inputs = document.getElementsByTagName('input');
   var warning = document.getElementById('warning');
-  var missingData = false;
+  var dataGood = true;
   for (var i = 0; i < inputs.length; ++i) {
     var value = inputs[i].value;
     if (value === "") {
-      missingData = true;
+      dataGood = false;
       break;
     }
   }
-  if (!missingData)
-    warning.style.display = 'none';
+  if (dataGood)
+    warning.style.visibility = 'none';
   else
-    warning.style.display = 'inline';
+    warning.style.visibility= 'initial';
+  return dataGood;
 }
 
-loginForm.addEventListener('submit', function(event) {
-  event.preventDefault();
-  validateInputs();
-});
+if (loginForm != null) {
+  loginForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    if (validateInputs())
+      sendData(loginForm, true);
+  });
+}
+else if (signupForm != null) {
+  signupForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    if (validateInputs())
+      sendData(signupForm, false);
+  });
+}

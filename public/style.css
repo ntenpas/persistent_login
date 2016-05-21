@@ -1,7 +1,3 @@
-body {
-  background-color: #ddd;
-}
-
 #welcome {
   width: 20rem;
   margin: auto;
@@ -48,5 +44,6 @@ body {
 #warning {
   color: #990099;
   text-align: center;
-  display: none;
+  visibility: hidden;
+  padding-bottom: 0.5rem;
 }

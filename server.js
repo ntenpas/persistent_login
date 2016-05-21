@@ -21,6 +21,36 @@ db.once('open', function() {
   User = mongoose.model('User', userSchema);
 });
 
+app.post('/signup', data.array(), function(req, res) {
+  // get user information
+  // check if user is already in database
+  // add user to database if not already in it
+  var username = req.body.username;
+  var password = req.body.password;
+  
+  var query = User.findOne({username: username, password: password});
+  query.exec(function(err, foundUser) {
+    if (err) {
+      console.log('error in query');
+    }
+    if (foundUser === null) {
+      var user = new User({
+        username: username,
+        password: password});
+      user.save(function(err, savedUser) {
+        if (err)
+          return console.error(err);
+        else
+          return console.log('user saved successfully');
+      });
+    }
+    else
+      console.log('user found in database, no save');
+  });
+
+  res.send('got it');
+});
+
 app.listen(8080, function() {
   console.log('listening on port 8080');
 });
