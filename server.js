@@ -33,7 +33,7 @@ app.post('/signup', data.array(), function(req, res) {
     if (err) {
       console.log('error in query');
     }
-    if (foundUser === null) {
+    else if (foundUser === null) {
       var user = new User({
         username: username,
         password: password});
@@ -43,6 +43,28 @@ app.post('/signup', data.array(), function(req, res) {
         else
           return console.log('user saved successfully');
       });
+    }
+    else
+      console.log('user found in database, no save');
+  });
+
+  res.send('got it');
+});
+
+app.post('/login', data.array(), function(req, res) {
+  // get user information
+  // check if user is in database
+  // login if in database
+  var username = req.body.username;
+  var password = req.body.password;
+  
+  var query = User.findOne({username: username, password: password});
+  query.exec(function(err, foundUser) {
+    if (err) {
+      console.log('error in query');
+    }
+    else if (foundUser != null) {
+      // continue here with session data!
     }
     else
       console.log('user found in database, no save');
