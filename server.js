@@ -1,13 +1,22 @@
 'use strict';
-var express = require('express');
-var mongoose = require('mongoose');
-var multer = require('multer');
-var app = express();
-var data = multer();
+const express = require('express');
+const mongoose = require('mongoose');
+const multer = require('multer');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+const app = express();
+const data = multer();
 
 app.use(express.static('public'));
 
 mongoose.connect('mongodb://localhost:27017/persistent_login');
+
+app.use(session({
+  store: new MongoStore({mongooseConnection: mongoose.connection}),
+  secret: 'owl',
+  saveUninitialized: false,
+  resave: true
+}));
 
 // connect to db and build schema
 var db = mongoose.connection;
@@ -19,6 +28,14 @@ db.once('open', function() {
     password: String
   });
   User = mongoose.model('User', userSchema);
+});
+
+app.get('/profile', function(req, res) {
+  console.log(req.session);
+  if (req.session.username)
+    res.send(req.session.username);
+  else
+    res.send('no username');
 });
 
 app.post('/signup', data.array(), function(req, res) {
@@ -64,10 +81,13 @@ app.post('/login', data.array(), function(req, res) {
       console.log('error in query');
     }
     else if (foundUser != null) {
-      // continue here with session data!
+      req.session.username = username;
+      req.session.password = password;
+      console.log(req.session);
+      //res.redirect('/profile');
     }
     else
-      console.log('user found in database, no save');
+      console.log('no user exists in database.');
   });
 
   res.send('got it');
