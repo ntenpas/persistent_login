@@ -3,20 +3,22 @@ const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const passportLocalMongoose = require('passport-local-mongoose');
 const app = express();
 const data = multer();
 
 app.use(express.static('public'));
+app.use(session({
+  secret: 'owl',
+  resave: true,
+  saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 mongoose.connect('mongodb://localhost:27017/persistent_login');
-
-app.use(session({
-  store: new MongoStore({mongooseConnection: mongoose.connection}),
-  secret: 'owl',
-  saveUninitialized: false,
-  resave: true
-}));
 
 // connect to db and build schema
 var db = mongoose.connection;
@@ -27,15 +29,15 @@ db.once('open', function() {
     username: String,
     password: String
   });
+  userSchema.plugin(passportLocalMongoose);
   User = mongoose.model('User', userSchema);
+  passport.use(new LocalStrategy(User.authenticate()));
+  passport.serializeUser(User.serializeUser());
+  passport.deserializeUser(User.deserializeUser());
 });
 
 app.get('/profile', function(req, res) {
-  console.log(req.session);
-  if (req.session.username)
-    res.send(req.session.username);
-  else
-    res.send('no username');
+  console.log(req.user);
 });
 
 app.post('/signup', data.array(), function(req, res) {
@@ -57,8 +59,12 @@ app.post('/signup', data.array(), function(req, res) {
       user.save(function(err, savedUser) {
         if (err)
           return console.error(err);
-        else
+        else {
+          passport.authenticate('local')(req, res, function() {
+            res.redirect('/profile');
+          });
           return console.log('user saved successfully');
+        }
       });
     }
     else
@@ -81,10 +87,9 @@ app.post('/login', data.array(), function(req, res) {
       console.log('error in query');
     }
     else if (foundUser != null) {
-      req.session.username = username;
-      req.session.password = password;
-      console.log(req.session);
-      //res.redirect('/profile');
+      passport.authenticate('local')(req, res, function() {
+        res.redirect('/profile');
+      });
     }
     else
       console.log('no user exists in database.');
