@@ -3,20 +3,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const session = require('express-session');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const passportLocalMongoose = require('passport-local-mongoose');
+const MongoStore = require('connect-mongo')(session);
 const app = express();
 const data = multer();
 
 app.use(express.static('public'));
-app.use(session({
-  secret: 'owl',
-  resave: true,
-  saveUninitialized: true
-}));
-app.use(passport.initialize());
-app.use(passport.session());
 
 mongoose.connect('mongodb://localhost:27017/persistent_login');
 
@@ -29,16 +20,24 @@ db.once('open', function() {
     username: String,
     password: String
   });
-  userSchema.plugin(passportLocalMongoose);
   User = mongoose.model('User', userSchema);
-  passport.use(new LocalStrategy(User.authenticate()));
-  passport.serializeUser(User.serializeUser());
-  passport.deserializeUser(User.deserializeUser());
 });
 
-app.get('/profile', function(req, res) {
-  console.log(req.user);
-});
+app.use(session({
+  secret: 'owl',
+  resave: true,
+  saveUninitialized: false,
+  store: new MongoStore({url: 'mongodb://localhost:27017/persistent_login'})
+}));
+
+var auth = function(req, res, next) {
+  if (req.session && req.session.username == 'nolan')
+    return next();
+  else {
+    console.log(req.session);
+    return res.sendStatus(401);
+  }
+}
 
 app.post('/signup', data.array(), function(req, res) {
   // get user information
@@ -59,12 +58,8 @@ app.post('/signup', data.array(), function(req, res) {
       user.save(function(err, savedUser) {
         if (err)
           return console.error(err);
-        else {
-          passport.authenticate('local')(req, res, function() {
-            res.redirect('/profile');
-          });
+        else
           return console.log('user saved successfully');
-        }
       });
     }
     else
@@ -83,19 +78,24 @@ app.post('/login', data.array(), function(req, res) {
   
   var query = User.findOne({username: username, password: password});
   query.exec(function(err, foundUser) {
-    if (err) {
+    if (err)
       console.log('error in query');
-    }
     else if (foundUser != null) {
-      passport.authenticate('local')(req, res, function() {
-        res.redirect('/profile');
-      });
+      req.session.username = username;
+      req.session.password = password;
+      console.log('login success!');
+      console.log(req.session);
     }
     else
       console.log('no user exists in database.');
   });
 
   res.send('got it');
+});
+
+app.get('/profile', data.array(), function(req, res) {
+  console.log(req.session);
+  res.send('profile');
 });
 
 app.listen(8080, function() {
