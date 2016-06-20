@@ -3,41 +3,63 @@ const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const passportLocalMongoose = require('passport-local-mongoose');
+
 const app = express();
 const data = multer();
 
 app.use(express.static('public'));
-
 mongoose.connect('mongodb://localhost:27017/persistent_login');
+
+app.use(session({
+  secret: 'owl',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // connect to db and build schema
 var db = mongoose.connection;
 var User; // model
+var Account; // schema
 db.on('error', console.error.bind(console, 'connection error'));
 db.once('open', function() {
-  var userSchema = new mongoose.Schema({
+  Account = new mongoose.Schema({
     username: String,
     password: String
   });
-  User = mongoose.model('User', userSchema);
+  User = mongoose.model('User', Account);
+
+  Account.plugin(passportLocalMongoose);
+  Account.validPassword = function(username, password) {
+    User.findOne({username: username, password: password}, function(err, user) {
+      if (user)
+        return true;
+      return false;
+    });
+  }
+  Account.authenticate = function(username, password, done) {
+    User.findOne({username: username}, function(err, user) {
+      if (err)
+        return done(err);
+      if (!user)
+        return done(null, false, {message: 'Incorrect Username'});
+      if (!user.validPassword(username, password)) {
+        return done(null, false, {message: 'Incorrect Password'});
+      return done(null, user);
+      }
+    });
+  }
+  passport.use(new LocalStrategy(Account.authenticate()));
+  passport.serializeUser(Account.serializeUser());
+  passport.deserializeUser(Account.deserializeUser());
 });
 
-app.use(session({
-  secret: 'owl',
-  resave: true,
-  saveUninitialized: false,
-  store: new MongoStore({url: 'mongodb://localhost:27017/persistent_login'})
-}));
 
-var auth = function(req, res, next) {
-  if (req.session && req.session.username == 'nolan')
-    return next();
-  else {
-    console.log(req.session);
-    return res.sendStatus(401);
-  }
-}
+
 
 app.post('/signup', data.array(), function(req, res) {
   // get user information
@@ -45,57 +67,29 @@ app.post('/signup', data.array(), function(req, res) {
   // add user to database if not already in it
   var username = req.body.username;
   var password = req.body.password;
-  
-  var query = User.findOne({username: username, password: password});
-  query.exec(function(err, foundUser) {
-    if (err) {
-      console.log('error in query');
-    }
-    else if (foundUser === null) {
-      var user = new User({
-        username: username,
-        password: password});
-      user.save(function(err, savedUser) {
-        if (err)
-          return console.error(err);
-        else
-          return console.log('user saved successfully');
-      });
-    }
-    else
-      console.log('user found in database, no save');
-  });
 
-  res.send('got it');
+  Account.register(new Account({username: username}), password,
+    function(err, account) {
+      if (err)
+        res.redirect('/error');
+        //return res.render('signup', {account: account});
+      passport.authenticate('local')(req, res, function() {
+        res.redirect('/profile')
+      });
+    });
 });
 
-app.post('/login', data.array(), function(req, res) {
-  // get user information
-  // check if user is in database
-  // login if in database
-  var username = req.body.username;
-  var password = req.body.password;
-  
-  var query = User.findOne({username: username, password: password});
-  query.exec(function(err, foundUser) {
-    if (err)
-      console.log('error in query');
-    else if (foundUser != null) {
-      req.session.username = username;
-      req.session.password = password;
-      console.log('login success!');
-      console.log(req.session);
-    }
-    else
-      console.log('no user exists in database.');
-  });
-
-  res.send('got it');
+app.post('/login', passport.authenticate('local'), function(req, res) {
+  res.redirect('/');
 });
 
 app.get('/profile', data.array(), function(req, res) {
   console.log(req.session);
   res.send('profile');
+});
+
+app.get('/error', function(req, res) {
+  res.send('error');
 });
 
 app.listen(8080, function() {
