@@ -1,17 +1,22 @@
 'use strict';
-const express = require('express');
-const mongoose = require('mongoose');
-const multer = require('multer');
-const session = require('express-session');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const passportLocalMongoose = require('passport-local-mongoose');
+var express = require('express');
+var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var passportLocalMongoose = require('passport-local-mongoose');
+var connectEnsureLogin = require('connect-ensure-login');
 
-const app = express();
-const data = multer();
+var app = express();
 
 app.use(express.static('public'));
 mongoose.connect('mongodb://localhost:27017/persistent_login');
+
+app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
 app.use(session({
   secret: 'owl',
@@ -32,17 +37,8 @@ db.once('open', function() {
   passport.deserializeUser(User.deserializeUser());
 });
 
-
-
-
-app.post('/signup', data.array(), function(req, res) {
-  // get user information
-  // check if user is already in database
-  // add user to database if not already in it
-  var username = req.body.username;
-  var password = req.body.password;
-
-  User.register(new User({username: username}), password,
+app.post('/signup', function(req, res) {
+  User.register(new User({username: req.body.username}), req.body.password,
     function(err) {
       if (err)
         res.redirect('/error');
@@ -51,13 +47,18 @@ app.post('/signup', data.array(), function(req, res) {
     });
 });
 
-app.post('/login', data.array(), passport.authenticate('local'), function(req, res) {
+app.post('/login', passport.authenticate('local'), function(req, res) {
   res.redirect('/profile');
 });
 
-app.get('/profile', data.array(), function(req, res) {
-  console.log(req.session);
-  res.send('profile');
+app.get('/profile', function(req, res) {
+  console.log(req);
+  if (req.user)
+    res.send(req.user.username);
+  else {
+    console.log(req.session);
+    res.send('no user logged in');
+  }
 });
 
 app.get('/error', function(req, res) {

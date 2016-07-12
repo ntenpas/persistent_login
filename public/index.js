@@ -1,6 +1,7 @@
 var loginForm = document.getElementById('loginForm');
 var signupForm = document.getElementById('signupForm');
 
+/*
 function sendData(form, login) {
   var xhr = new XMLHttpRequest();
   var fd = new FormData(form);
@@ -20,6 +21,7 @@ function sendData(form, login) {
 
   xhr.send(fd);
 }
+*/
 
 function validateInputs() {
   var inputs = document.getElementsByTagName('input');
@@ -43,13 +45,15 @@ if (loginForm != null) {
   loginForm.addEventListener('submit', function(event) {
     event.preventDefault();
     if (validateInputs())
-      sendData(loginForm, true);
+      loginForm.submit();
+      //sendData(loginForm, true);
   });
 }
 else if (signupForm != null) {
   signupForm.addEventListener('submit', function(event) {
     event.preventDefault();
     if (validateInputs())
-      sendData(signupForm, false);
+      signupForm.submit();
+      //sendData(signupForm, false);
   });
 }
